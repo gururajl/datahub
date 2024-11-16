@@ -1,6 +1,7 @@
 package com.onecap.datahub.client;
 
 import com.onecap.datahub.model.AddCredentialsRequest;
+import com.onecap.datahub.model.AddCredentialsResponse;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -51,14 +52,14 @@ class ClearGSTClientTest {
             new MockResponse()
                 .setResponseCode(200)
                 .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .setBody("{\"status\":\"success\"}")
+                .setBody("{\"requestId\":\"12345\",\"status\":\"PROCESSED\"}")
         );
 
         String gstin = "TEST_GSTIN";
         String username = "TEST_USER";
 
         // Act
-        String response = clearGSTClient.addCredentials(gstin, username);
+        AddCredentialsResponse response = clearGSTClient.addCredentials(gstin, username);
 
         // Assert
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
@@ -75,7 +76,8 @@ class ClearGSTClientTest {
         
         // Verify the response
         assertNotNull(response);
-        assertEquals("{\"status\":\"success\"}", response);
+        assertEquals("12345", response.getRequestId());
+        assertEquals("PROCESSED", response.getStatus());
     }
 
     @Test
@@ -85,7 +87,7 @@ class ClearGSTClientTest {
             new MockResponse()
                 .setResponseCode(200)
                 .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .setBody("{\"status\":\"success\"}")
+                .setBody("{\"requestId\":\"12345\",\"status\":\"PROCESSED\"}")
         );
 
         String gstin = "TEST_GSTIN";
@@ -94,7 +96,11 @@ class ClearGSTClientTest {
         // Act & Assert
         clearGSTClient.addCredentialsAsync(gstin, username)
             .as(StepVerifier::create)
-            .expectNext("{\"status\":\"success\"}")
+            .expectNextMatches(response -> {
+                assertEquals("12345", response.getRequestId());
+                assertEquals("PROCESSED", response.getStatus());
+                return true;
+            })
             .verifyComplete();
 
         // Verify the request

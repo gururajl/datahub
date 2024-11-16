@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.onecap.datahub.model.AddCredentialsRequest;
+import com.onecap.datahub.model.AddCredentialsResponse;
 
 import reactor.core.publisher.Mono;
 
@@ -18,25 +19,25 @@ public class ClearGSTClient {
     }
 
     // Synchronous version
-    public String addCredentials(String gstin, String username) {
+    public AddCredentialsResponse addCredentials(String gstin, String username) {
         return webClient.post()
                 .uri("/clearIdentity/v1/gst-auth/add-credentials")
                 .header("gstin", gstin)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(new AddCredentialsRequest(username))
                 .retrieve()
-                .bodyToMono(String.class)
+                .bodyToMono(AddCredentialsResponse.class)
                 .block(); // Makes it synchronous
     }
 
     // Asynchronous version
-    public Mono<String> addCredentialsAsync(String gstin, String username) {
+    public Mono<AddCredentialsResponse> addCredentialsAsync(String gstin, String username) {
         return webClient.post()
                 .uri("/clearIdentity/v1/gst-auth/add-credentials")
                 .header("gstin", gstin)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(new AddCredentialsRequest(username))
                 .retrieve()
-                .bodyToMono(String.class);
+                .bodyToMono(AddCredentialsResponse.class);
     }
 }
