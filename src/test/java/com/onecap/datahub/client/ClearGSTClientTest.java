@@ -2,6 +2,7 @@ package com.onecap.datahub.client;
 
 import com.onecap.datahub.model.AddCredentialsRequest;
 import com.onecap.datahub.model.AddCredentialsResponse;
+import com.onecap.datahub.model.OtpRequestResponse;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -109,5 +110,63 @@ class ClearGSTClientTest {
         assertEquals("/clearIdentity/v1/gst-auth/add-credentials", recordedRequest.getPath());
         assertEquals(gstin, recordedRequest.getHeader("gstin"));
         assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
+    }
+
+    @Test
+    void requestOtp_shouldSendCorrectRequest() throws InterruptedException {
+        // Arrange
+        mockWebServer.enqueue(
+            new MockResponse()
+                .setResponseCode(200)
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setBody("{\"requestId\":\"a81c49ef-ca50-46aa-ac42-79be1784c752\",\"status\":\"SUCCESS\"}")
+        );
+
+        String gstin = "TEST_GSTIN";
+
+        // Act
+        OtpRequestResponse response = clearGSTClient.requestOtp(gstin);
+
+        // Assert
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        
+        // Verify the request
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/clearIdentity/v1/gst-auth/otp/request", recordedRequest.getPath());
+        assertEquals(gstin, recordedRequest.getHeader("gstin"));
+        
+        // Verify the response
+        assertNotNull(response);
+        assertEquals("a81c49ef-ca50-46aa-ac42-79be1784c752", response.getRequestId());
+        assertEquals("SUCCESS", response.getStatus());
+    }
+
+    @Test
+    void requestOtpAsync_shouldSendCorrectRequest() throws InterruptedException {
+        // Arrange
+        mockWebServer.enqueue(
+            new MockResponse()
+                .setResponseCode(200)
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setBody("{\"requestId\":\"a81c49ef-ca50-46aa-ac42-79be1784c752\",\"status\":\"SUCCESS\"}")
+        );
+
+        String gstin = "TEST_GSTIN";
+
+        // Act & Assert
+        clearGSTClient.requestOtpAsync(gstin)
+            .as(StepVerifier::create)
+            .expectNextMatches(response -> {
+                assertEquals("a81c49ef-ca50-46aa-ac42-79be1784c752", response.getRequestId());
+                assertEquals("SUCCESS", response.getStatus());
+                return true;
+            })
+            .verifyComplete();
+
+        // Verify the request
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/clearIdentity/v1/gst-auth/otp/request", recordedRequest.getPath());
+        assertEquals(gstin, recordedRequest.getHeader("gstin"));
     }
 }

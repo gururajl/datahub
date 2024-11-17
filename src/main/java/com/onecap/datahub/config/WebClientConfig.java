@@ -23,7 +23,7 @@ public class WebClientConfig {
     private String authToken;
 
     @Bean
-    public WebClient clearWebClient() {
+    public WebClient webClient() {
         return WebClient.builder()
             .baseUrl(baseUrl)
             .defaultHeader("accept", "application/json")
