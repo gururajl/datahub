@@ -8,6 +8,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.onecap.datahub.model.AddCredentialsRequest;
 import com.onecap.datahub.model.AddCredentialsResponse;
 import com.onecap.datahub.model.OtpRequestResponse;
+import com.onecap.datahub.model.SubmitOtpRequest;
+import com.onecap.datahub.model.SubmitOtpResponse;
 
 import reactor.core.publisher.Mono;
 
@@ -59,5 +61,26 @@ public class ClearGSTClient {
                 .header("gstin", gstin)
                 .retrieve()
                 .bodyToMono(OtpRequestResponse.class);
+    }
+
+    // Synchronous version for submitting OTP
+    public SubmitOtpResponse submitOtp(String gstin, String otp) {
+        return webClient.post()
+                .uri("/clearIdentity/v1/gst-auth/otp/submit")
+                .header("gstin", gstin)
+                .bodyValue(new SubmitOtpRequest(otp))
+                .retrieve()
+                .bodyToMono(SubmitOtpResponse.class)
+                .block(); // Makes it synchronous
+    }
+
+    // Asynchronous version for submitting OTP
+    public Mono<SubmitOtpResponse> submitOtpAsync(String gstin, String otp) {
+        return webClient.post()
+                .uri("/clearIdentity/v1/gst-auth/otp/submit")
+                .header("gstin", gstin)
+                .bodyValue(new SubmitOtpRequest(otp))
+                .retrieve()
+                .bodyToMono(SubmitOtpResponse.class);
     }
 }

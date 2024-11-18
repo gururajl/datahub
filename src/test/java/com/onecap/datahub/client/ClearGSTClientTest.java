@@ -3,6 +3,8 @@ package com.onecap.datahub.client;
 import com.onecap.datahub.model.AddCredentialsRequest;
 import com.onecap.datahub.model.AddCredentialsResponse;
 import com.onecap.datahub.model.OtpRequestResponse;
+import com.onecap.datahub.model.SubmitOtpRequest;
+import com.onecap.datahub.model.SubmitOtpResponse;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -168,5 +170,73 @@ class ClearGSTClientTest {
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals("/clearIdentity/v1/gst-auth/otp/request", recordedRequest.getPath());
         assertEquals(gstin, recordedRequest.getHeader("gstin"));
+    }
+
+    @Test
+    void submitOtp_shouldSendCorrectRequest() throws InterruptedException {
+        // Arrange
+        mockWebServer.enqueue(
+            new MockResponse()
+                .setResponseCode(200)
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setBody("{\"requestId\":\"3a4ce4c2-ec6b-40b3-9bbc-64f2d7f87b0e\",\"status\":\"SUCCESS\"}")
+        );
+
+        String gstin = "TEST_GSTIN";
+        String otp = "488673";
+        
+        // Act
+        SubmitOtpResponse response = clearGSTClient.submitOtp(gstin, otp);
+
+        // Assert
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        
+        // Verify the request
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/clearIdentity/v1/gst-auth/otp/submit", recordedRequest.getPath());
+        assertEquals(gstin, recordedRequest.getHeader("gstin"));
+        // assertEquals(authToken, recordedRequest.getHeader("x-cleartax-auth-token"));
+        assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
+        
+        // Verify request body contains otp
+        String expectedRequestBody = "{\"otp\":\"" + otp + "\"}";
+        assertEquals(expectedRequestBody, recordedRequest.getBody().readUtf8());
+        
+        // Verify the response
+        assertNotNull(response);
+        assertEquals("3a4ce4c2-ec6b-40b3-9bbc-64f2d7f87b0e", response.getRequestId());
+        assertEquals("SUCCESS", response.getStatus());
+    }
+
+    @Test
+    void submitOtpAsync_shouldSendCorrectRequest() throws InterruptedException {
+        // Arrange
+        mockWebServer.enqueue(
+            new MockResponse()
+                .setResponseCode(200)
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setBody("{\"requestId\":\"3a4ce4c2-ec6b-40b3-9bbc-64f2d7f87b0e\",\"status\":\"SUCCESS\"}")
+        );
+
+        String gstin = "TEST_GSTIN";
+        String otp = "488673";
+        // String authToken = "TEST_AUTH_TOKEN";
+
+        // Act & Assert
+        clearGSTClient.submitOtpAsync(gstin, otp)
+            .as(StepVerifier::create)
+            .expectNextMatches(response -> {
+                assertEquals("3a4ce4c2-ec6b-40b3-9bbc-64f2d7f87b0e", response.getRequestId());
+                assertEquals("SUCCESS", response.getStatus());
+                return true;
+            })
+            .verifyComplete();
+
+        // Verify the request
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/clearIdentity/v1/gst-auth/otp/submit", recordedRequest.getPath());
+        assertEquals(gstin, recordedRequest.getHeader("gstin"));
+        // assertEquals(authToken, recordedRequest.getHeader("x-cleartax-auth-token"));
     }
 }
