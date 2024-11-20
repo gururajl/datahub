@@ -13,6 +13,7 @@ import com.onecap.datahub.model.SubmitOtpResponse;
 import com.onecap.datahub.model.TriggerIrnRequest;
 import com.onecap.datahub.model.TriggerIrnResponse;
 import com.onecap.datahub.model.ReturnPeriod;
+import com.onecap.datahub.model.IrnPullStatusResponse;
 
 import reactor.core.publisher.Mono;
 
@@ -104,5 +105,14 @@ public class ClearGSTClient {
                 .bodyValue(new TriggerIrnRequest(gstin, returnPeriod, supplierType, invoiceType))
                 .retrieve()
                 .bodyToMono(TriggerIrnResponse.class);
+    }
+
+    public Mono<IrnPullStatusResponse> getIrnPullStatus(String gstin, String dataPullRequestId) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                    .path("/clearIdentity/v1/einvoices/fetch-pull-response/{gstin}/{dataPullRequestId}")
+                    .build(gstin, dataPullRequestId))
+                .retrieve()
+                .bodyToMono(IrnPullStatusResponse.class);
     }
 }

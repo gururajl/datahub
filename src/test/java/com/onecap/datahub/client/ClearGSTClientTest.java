@@ -8,6 +8,7 @@ import com.onecap.datahub.model.SubmitOtpResponse;
 import com.onecap.datahub.model.TriggerIrnRequest;
 import com.onecap.datahub.model.TriggerIrnResponse;
 import com.onecap.datahub.model.ReturnPeriod;
+import com.onecap.datahub.model.IrnPullStatusResponse;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -308,5 +309,34 @@ class ClearGSTClientTest {
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals("/clearIdentity/v1/einvoices/create-pull-request", recordedRequest.getPath());
         // assertEquals("your_auth_token_here", recordedRequest.getHeader("x-cleartax-auth-token"));
+    }
+
+    @Test
+    void getIrnPullStatus_shouldReturnCorrectResponse() throws InterruptedException {
+        // Arrange
+        mockWebServer.enqueue(
+            new MockResponse()
+                .setResponseCode(200)
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setBody("{\"requestId\":\"e2808655-1f6b-49c5-a97b-19e193946783\",\"status\":\"SUCCESS\",\"generatedUrls\":[]}")
+        );
+
+        String gstin = "03AAHCG7552R1Z1";
+        String dataPullRequestId = "65a1116090a5ce7d5cb75e39";
+
+        // Act & Assert
+        clearGSTClient.getIrnPullStatus(gstin, dataPullRequestId)
+            .as(StepVerifier::create)
+            .expectNextMatches(response -> {
+                assertEquals("e2808655-1f6b-49c5-a97b-19e193946783", response.getRequestId());
+                assertEquals("SUCCESS", response.getStatus());
+                return true;
+            })
+            .verifyComplete();
+
+        // Verify the request
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("GET", recordedRequest.getMethod());
+        assertEquals("/clearIdentity/v1/einvoices/fetch-pull-response/03AAHCG7552R1Z1/65a1116090a5ce7d5cb75e39", recordedRequest.getPath());
     }
 }
