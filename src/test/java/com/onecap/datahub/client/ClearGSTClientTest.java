@@ -9,6 +9,8 @@ import com.onecap.datahub.model.TriggerIrnRequest;
 import com.onecap.datahub.model.TriggerIrnResponse;
 import com.onecap.datahub.model.ReturnPeriod;
 import com.onecap.datahub.model.IrnPullStatusResponse;
+import com.onecap.datahub.model.FetchIrnListRequest;
+import com.onecap.datahub.model.FetchIrnListResponse;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -338,5 +340,38 @@ class ClearGSTClientTest {
         RecordedRequest recordedRequest = mockWebServer.takeRequest();
         assertEquals("GET", recordedRequest.getMethod());
         assertEquals("/clearIdentity/v1/einvoices/fetch-pull-response/03AAHCG7552R1Z1/65a1116090a5ce7d5cb75e39", recordedRequest.getPath());
+    }
+
+    @Test
+    void fetchIrnList_shouldReturnCorrectResponse() throws InterruptedException {
+        // Arrange
+        mockWebServer.enqueue(
+            new MockResponse()
+                .setResponseCode(200)
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setBody("{\"requestId\":\"test-request-id\",\"irnList\":[]}")
+        );
+
+        FetchIrnListRequest request = new FetchIrnListRequest();
+        request.setGstin("03AAHCG7552R1Z1");
+        request.setSupplierType("B2B");
+        request.setInvoiceType("SALES");
+        request.setPage(0);
+        request.setSize(5);
+
+        // Act & Assert
+        clearGSTClient.fetchIrnList(request)
+            .as(StepVerifier::create)
+            .expectNextMatches(response -> {
+                assertEquals("test-request-id", response.getRequestId());
+                assertNotNull(response.getIrnList());
+                return true;
+            })
+            .verifyComplete();
+
+        // Verify the request
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/clearIdentity/v1/einvoices/fetch-irn-list", recordedRequest.getPath());
     }
 }
