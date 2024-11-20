@@ -374,4 +374,33 @@ class ClearGSTClientTest {
         assertEquals("POST", recordedRequest.getMethod());
         assertEquals("/clearIdentity/v1/einvoices/fetch-irn-list", recordedRequest.getPath());
     }
+
+    @Test
+    void fetchIrnDetails_shouldReturnCorrectResponse() throws InterruptedException {
+        // Arrange
+        mockWebServer.enqueue(
+            new MockResponse()
+                .setResponseCode(200)
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setBody("{\"irn\":\"5e7ef60fb59cfb1800e7583d098a570e0e46fd3075efa29b5ffbf75c31f2e50a\", \"version\":\"1.1\", \"itemList\":[], \"ackNo\":\"132316611694098\", \"chargesDetails\":{}, \"sellerDetails\":{}, \"documentDetails\":{}, \"buyerDetails\":{}, \"acknowledgementDate\":\"2023-11-19 13:31:00\", \"transactionDetails\":{}}")
+        );
+
+        String gstin = "03AAHCG7552R1Z1";
+        String irn = "5e7ef60fb59cfb1800e7583d098a570e0e46fd3075efa29b5ffbf75c31f2e50a";
+
+        // Act & Assert
+        clearGSTClient.fetchIrnDetails(gstin, irn)
+            .as(StepVerifier::create)
+            .expectNextMatches(invoice -> {
+                assertEquals("5e7ef60fb59cfb1800e7583d098a570e0e46fd3075efa29b5ffbf75c31f2e50a", invoice.getIrn());
+                assertEquals("1.1", invoice.getVersion());
+                return true;
+            })
+            .verifyComplete();
+
+        // Verify the request
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/clearIdentity/v1/einvoices/03AAHCG7552R1Z1/irn/5e7ef60fb59cfb1800e7583d098a570e0e46fd3075efa29b5ffbf75c31f2e50a", recordedRequest.getPath());
+    }
 }

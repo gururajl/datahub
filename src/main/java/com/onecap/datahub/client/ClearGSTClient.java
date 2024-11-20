@@ -16,6 +16,7 @@ import com.onecap.datahub.model.ReturnPeriod;
 import com.onecap.datahub.model.IrnPullStatusResponse;
 import com.onecap.datahub.model.FetchIrnListRequest;
 import com.onecap.datahub.model.FetchIrnListResponse;
+import com.onecap.datahub.model.Invoice;
 
 import reactor.core.publisher.Mono;
 
@@ -125,5 +126,14 @@ public class ClearGSTClient {
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(FetchIrnListResponse.class);
+    }
+
+    public Mono<Invoice> fetchIrnDetails(String gstin, String irn) {
+        return webClient.post()
+                .uri(uriBuilder -> uriBuilder
+                    .path("/clearIdentity/v1/einvoices/{gstin}/irn/{irn}")
+                    .build(gstin, irn))
+                .retrieve()
+                .bodyToMono(Invoice.class);
     }
 }
