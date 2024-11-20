@@ -5,6 +5,9 @@ import com.onecap.datahub.model.AddCredentialsResponse;
 import com.onecap.datahub.model.OtpRequestResponse;
 import com.onecap.datahub.model.SubmitOtpRequest;
 import com.onecap.datahub.model.SubmitOtpResponse;
+import com.onecap.datahub.model.TriggerIrnRequest;
+import com.onecap.datahub.model.TriggerIrnResponse;
+import com.onecap.datahub.model.ReturnPeriod;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -238,5 +241,72 @@ class ClearGSTClientTest {
         assertEquals("/clearIdentity/v1/gst-auth/otp/submit", recordedRequest.getPath());
         assertEquals(gstin, recordedRequest.getHeader("gstin"));
         // assertEquals(authToken, recordedRequest.getHeader("x-cleartax-auth-token"));
+    }
+
+    @Test
+    void triggerIrnListFetch_shouldSendCorrectRequest() throws InterruptedException {
+        // Arrange
+        mockWebServer.enqueue(
+            new MockResponse()
+                .setResponseCode(200)
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setBody("{\"requestId\":\"cabd934c-7c98-4b3d-9fb2-2fe2f9f15d52\",\"dataPullRequestId\":\"65cb681814e93b26da0953c0\"}")
+        );
+
+        String gstin = "03AAHCG7552R1Z1";
+        String returnPeriod = "112023";
+        String supplierType = "B2B";
+        String invoiceType = "SALES";
+
+        // Act
+        TriggerIrnResponse response = clearGSTClient.triggerIrnListFetch(gstin, new ReturnPeriod(returnPeriod), TriggerIrnRequest.SupplierType.B2B, TriggerIrnRequest.InvoiceType.SALES );
+
+        // Assert
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/clearIdentity/v1/einvoices/create-pull-request", recordedRequest.getPath());
+        // assertEquals("your_auth_token_here", recordedRequest.getHeader("x-cleartax-auth-token"));
+        assertEquals(MediaType.APPLICATION_JSON_VALUE, recordedRequest.getHeader(HttpHeaders.CONTENT_TYPE));
+
+        // Verify request body
+        String expectedRequestBody = "{\"gstin\":\"" + gstin + "\",\"returnPeriod\":\"" + returnPeriod + "\",\"supplierType\":\"" + supplierType + "\",\"invoiceType\":\"" + invoiceType + "\"}";
+        assertEquals(expectedRequestBody, recordedRequest.getBody().readUtf8());
+
+        // Verify the response
+        assertNotNull(response);
+        assertEquals("cabd934c-7c98-4b3d-9fb2-2fe2f9f15d52", response.getRequestId().toString());
+        assertEquals("65cb681814e93b26da0953c0", response.getDataPullRequestId());
+    }
+
+    @Test
+    void triggerIrnListFetchAsync_shouldSendCorrectRequest() throws InterruptedException {
+        // Arrange
+        mockWebServer.enqueue(
+            new MockResponse()
+                .setResponseCode(200)
+                .setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .setBody("{\"requestId\":\"cabd934c-7c98-4b3d-9fb2-2fe2f9f15d52\",\"dataPullRequestId\":\"65cb681814e93b26da0953c0\"}")
+        );
+
+        String gstin = "03AAHCG7552R1Z1";
+        ReturnPeriod returnPeriod = new ReturnPeriod("112023");
+        TriggerIrnRequest.SupplierType supplierType = TriggerIrnRequest.SupplierType.B2B;
+        TriggerIrnRequest.InvoiceType invoiceType = TriggerIrnRequest.InvoiceType.SALES;
+
+        // Act & Assert
+        clearGSTClient.triggerIrnListFetchAsync(gstin, returnPeriod, supplierType, invoiceType)
+            .as(StepVerifier::create)
+            .expectNextMatches(response -> {
+                assertEquals("cabd934c-7c98-4b3d-9fb2-2fe2f9f15d52", response.getRequestId().toString());
+                assertEquals("65cb681814e93b26da0953c0", response.getDataPullRequestId());
+                return true;
+            })
+            .verifyComplete();
+
+        // Verify the request
+        RecordedRequest recordedRequest = mockWebServer.takeRequest();
+        assertEquals("POST", recordedRequest.getMethod());
+        assertEquals("/clearIdentity/v1/einvoices/create-pull-request", recordedRequest.getPath());
+        // assertEquals("your_auth_token_here", recordedRequest.getHeader("x-cleartax-auth-token"));
     }
 }

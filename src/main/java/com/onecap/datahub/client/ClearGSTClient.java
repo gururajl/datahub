@@ -10,6 +10,9 @@ import com.onecap.datahub.model.AddCredentialsResponse;
 import com.onecap.datahub.model.OtpRequestResponse;
 import com.onecap.datahub.model.SubmitOtpRequest;
 import com.onecap.datahub.model.SubmitOtpResponse;
+import com.onecap.datahub.model.TriggerIrnRequest;
+import com.onecap.datahub.model.TriggerIrnResponse;
+import com.onecap.datahub.model.ReturnPeriod;
 
 import reactor.core.publisher.Mono;
 
@@ -82,5 +85,24 @@ public class ClearGSTClient {
                 .bodyValue(new SubmitOtpRequest(otp))
                 .retrieve()
                 .bodyToMono(SubmitOtpResponse.class);
+    }
+
+    // Synchronous version to trigger IRN list fetch
+    public TriggerIrnResponse triggerIrnListFetch(String gstin, ReturnPeriod returnPeriod, TriggerIrnRequest.SupplierType supplierType, TriggerIrnRequest.InvoiceType invoiceType) {
+        return webClient.post()
+                .uri("/clearIdentity/v1/einvoices/create-pull-request")
+                .bodyValue(new TriggerIrnRequest(gstin, returnPeriod, supplierType, invoiceType))
+                .retrieve()
+                .bodyToMono(TriggerIrnResponse.class)
+                .block(); // Makes it synchronous
+    }
+
+    // Asynchronous version to trigger IRN list fetch
+    public Mono<TriggerIrnResponse> triggerIrnListFetchAsync(String gstin, ReturnPeriod returnPeriod, TriggerIrnRequest.SupplierType supplierType, TriggerIrnRequest.InvoiceType invoiceType) {
+        return webClient.post()
+                .uri("/clearIdentity/v1/einvoices/create-pull-request")
+                .bodyValue(new TriggerIrnRequest(gstin, returnPeriod, supplierType, invoiceType))
+                .retrieve()
+                .bodyToMono(TriggerIrnResponse.class);
     }
 }
