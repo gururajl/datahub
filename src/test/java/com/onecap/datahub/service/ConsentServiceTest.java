@@ -16,13 +16,13 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(classes = TestConfig.class)
 @ActiveProfiles("test")
 @Transactional
-public class ConsentServiceTest {
+class ConsentServiceTest {
 
     @Autowired
     private ConsentService consentService;
 
     @Test
-    public void testCreateGSTConsent() {
+    void testCreateGSTConsent() {
         String customerId = "CUST001";
         String gstin = "29ABCDE1234F1Z5";
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(30);
@@ -42,7 +42,7 @@ public class ConsentServiceTest {
     }
 
     @Test
-    public void testCreateBankConsent() {
+    void testCreateBankConsent() {
         String customerId = "CUST001";
         String accountNumber = "1234567890";
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(90);
@@ -65,7 +65,7 @@ public class ConsentServiceTest {
     }
 
     @Test
-    public void testHasValidConsent() {
+    void testHasValidConsent() {
         // Create a consent first
         String customerId = "CUST001";
         String gstin = "29ABCDE1234F1Z5";
@@ -89,7 +89,7 @@ public class ConsentServiceTest {
     }
 
     @Test
-    public void testRevokeConsent() {
+    void testRevokeConsent() {
         // Create a consent first
         String customerId = "CUST001";
         String gstin = "29ABCDE1234F1Z5";
@@ -111,7 +111,7 @@ public class ConsentServiceTest {
     }
 
     @Test
-    public void testGetActiveConsents() {
+    void testGetActiveConsents() {
         String customerId = "CUST001";
         
         // Create multiple consents

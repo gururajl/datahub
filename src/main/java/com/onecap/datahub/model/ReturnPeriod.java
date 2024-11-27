@@ -2,6 +2,7 @@ package com.onecap.datahub.model;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.regex.Pattern;
+import java.time.YearMonth;
 
 public class ReturnPeriod {
     private static final Pattern RETURN_PERIOD_PATTERN = Pattern.compile("\\d{2}\\d{4}");
@@ -22,5 +23,9 @@ public class ReturnPeriod {
     @Override
     public String toString() {
         return value;
+    }
+
+    public static ReturnPeriod fromYearMonth(YearMonth yearMonth) {
+        return new ReturnPeriod(String.format("%02d%04d", yearMonth.getMonthValue(), yearMonth.getYear()));
     }
 } 
